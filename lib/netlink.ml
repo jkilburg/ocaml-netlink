@@ -180,14 +180,17 @@ module Route = struct
         (ptr t @-> returning string)
 
     let set_mtu = foreign "set_mtu"
-        (ptr t @-> returning void)
+        (ptr t @-> uint32_t @-> returning void)
         
     let get_mtu = foreign "get_mtu"
-        (ptr t @-> returning int)
+        (ptr t @-> returning uint32_t)
 
     let get_stat = foreign "get_stat"
         (ptr t @-> stat_id @-> returning uint64_t)
 
+    let set_addr = foreign "set_addr"
+        (ptr t @-> ptr Address.t @-> returning void)
+        
     let get_addr = foreign "get_addr"
         (ptr t @-> returning (ptr Address.t))
 
@@ -198,31 +201,76 @@ module Route = struct
         (ptr t @-> string @-> returning void)
         
     let set_flags = foreign "set_flags"
-        (ptr t @-> int @-> returning void)
+        (ptr t @-> uint32_t @-> returning void)
 
     let unset_flags = foreign "unset_flags"
-        (ptr t @-> int @-> returning void)
+        (ptr t @-> uint32_t @-> returning void)
 
     let get_flags = foreign "get_flags"
-        (ptr t @-> returning int)
+        (ptr t @-> returning uint32_t)
 
     let set_txqlen = foreign "set_txqlen"
-        (ptr t @-> int @-> returning void)
+        (ptr t @-> uint32_t @-> returning void)
 
     let get_txqlen = foreign "get_txqlen"
-        (ptr t @-> returning int)
+        (ptr t @-> returning uint32_t)
 
     let set_weight = foreign "set_weight"
-        (ptr t @-> int @-> returning void)
+        (ptr t @-> uint32_t @-> returning void)
 
     let get_weight = foreign "get_weight"
-        (ptr t @-> returning int)
+        (ptr t @-> returning uint32_t)
 
     let set_family = foreign "set_family"
         (ptr t @-> int @-> returning void)
 
     let get_family = foreign "get_family"
         (ptr t @-> returning int)
+
+    let set_arptype = foreign "set_arptype"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_arptype = foreign "get_arptype"
+        (ptr t @-> returning uint32_t)
+
+    let set_broadcast = foreign "set_broadcast"
+        (ptr t @-> ptr Address.t @-> returning void)
+
+    let get_broadcast = foreign "get_broadcast"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_link = foreign "set_link"
+        (ptr t @-> int @-> returning void)
+
+    let get_link = foreign "get_link"
+        (ptr t @-> returning int)
+
+    let set_master = foreign "set_master"
+        (ptr t @-> int @-> returning void)
+
+    let get_master = foreign "get_master"
+        (ptr t @-> returning int)
+
+    let set_operstate = foreign "set_operstate"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_operstate = foreign "get_operstate"
+        (ptr t @-> returning uint8_t)
+
+    let set_linkmode = foreign "set_linkmode"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_linkmode = foreign "get_linkmode"
+        (ptr t @-> returning uint8_t)
+
+    let get_stat = foreign "get_stat"
+        (ptr t @-> returning uint64_t)
+
+    let set_info_type = foreign "set_info_type"
+        (ptr t @-> string -> returning int)
+
+    let get_info_type = foreign "get_info_type"
+        (ptr t @-> returning string)
   end
 
   module Address = struct
@@ -301,5 +349,35 @@ module Route = struct
 
     let get_broadcast = foreign "get_broadcast"
         (ptr t @-> returning (ptr Address.t))
+
+    let set_multicast = foreign "set_multicast"
+        (ptr t @-> ptr Address.t @-> returning int)
+
+    let get_multicast = foreign "get_multicast"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_anycast = foreign "set_anycast"
+        (ptr t @-> ptr Address.t @-> returning int)
+
+    let get_anycast = foreign "get_anycast"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_valid_lifetme = foreign "set_valid_lifetime"
+        (ptr t @-> uint32_t @-> return void)
+
+    let get_valid_lifetime = foreign "get_valid_lifetime"
+        (ptr t @-> returning uint32_t)
+
+    let set_preferred_lifetime = foreign "set_preferred_lifetime"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_preferred_lifetime = foreign "get_preferred_lifetime"
+        (ptr t @-> returning uint32_t)
+
+    let get_create_time = foreign "get_create_time"
+        (ptr t @-> returning uint32_t)
+
+    let get_last_update_time = foreign "get_last_update_time"
+        (ptr t @-> returning uint32_t)
   end
 end
