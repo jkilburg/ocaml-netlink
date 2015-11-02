@@ -267,7 +267,7 @@ module Route = struct
         (ptr t @-> returning uint64_t)
 
     let set_info_type = foreign "set_info_type"
-        (ptr t @-> string -> returning int)
+        (ptr t @-> string @-> returning int)
 
     let get_info_type = foreign "get_info_type"
         (ptr t @-> returning string)
@@ -363,7 +363,7 @@ module Route = struct
         (ptr t @-> returning (ptr Address.t))
 
     let set_valid_lifetme = foreign "set_valid_lifetime"
-        (ptr t @-> uint32_t @-> return void)
+        (ptr t @-> uint32_t @-> returning void)
 
     let get_valid_lifetime = foreign "get_valid_lifetime"
         (ptr t @-> returning uint32_t)
