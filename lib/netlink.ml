@@ -121,9 +121,35 @@ end
 module Route = struct
   module Link = struct
     type t
-
-    type stat_id = RX_PACKETS | TX_PACKETS | RX_BYTES | TX_BYTES | RX_ERRORS | TX_ERRORS
-
+      
+    type stat_id = RX_PACKETS
+                 | TX_PACKETS
+                 | RX_BYTES
+                 | TX_BYTES
+                 | RX_ERRORS
+                 | TX_ERRORS
+                 | RX_DROPPED
+                 | TX_DROPPED           
+                 | RX_COMPRESSED        
+                 | TX_COMPRESSED        
+                 | RX_FIFO_ERR          
+                 | TX_FIFO_ERR          
+                 | RX_LEN_ERR           
+                 | RX_OVER_ERR
+                 | RX_CRC_ERR
+                 | RX_FRAME_ERR
+                 | RX_MISSED_ERR
+                 | TX_ABORT_ERR
+                 | TX_CARRIER_ERR
+                 | TX_HBEAT_ERR
+                 | TX_WIN_ERR
+                 | COLLISIONS
+                 | MULTICAST
+                 | IP6_INPKTS
+                 | IP6_INHDRERRORS
+                 | IP6_INTOOBIGERRORS
+                 | IP6_INNOROUTES
+                 
     let int_of_stat_id = function
       | RX_PACKETS -> 0
       | TX_PACKETS -> 1
@@ -131,6 +157,27 @@ module Route = struct
       | TX_BYTES -> 3
       | RX_ERRORS -> 4
       | TX_ERRORS -> 5
+      | RX_DROPPED -> 6
+      | TX_DROPPED -> 7      
+      | RX_COMPRESSED -> 8      
+      | TX_COMPRESSED -> 9   
+      | RX_FIFO_ERR -> 10
+      | TX_FIFO_ERR -> 11
+      | RX_LEN_ERR -> 12
+      | RX_OVER_ERR -> 13
+      | RX_CRC_ERR -> 14
+      | RX_FRAME_ERR -> 15
+      | RX_MISSED_ERR -> 16
+      | TX_ABORT_ERR -> 17
+      | TX_CARRIER_ERR -> 18
+      | TX_HBEAT_ERR -> 19
+      | TX_WIN_ERR -> 20
+      | COLLISIONS -> 21
+      | MULTICAST -> 22
+      | IP6_INPKTS -> 23
+      | IP6_INHDRERRORS -> 24
+      | IP6_INTOOBIGERRORS -> 25
+      | IP6_INNOROUTES -> 26
 
     let stat_id_of_int = function
       | 0 -> RX_PACKETS
@@ -139,6 +186,27 @@ module Route = struct
       | 3 -> TX_BYTES
       | 4 -> RX_ERRORS
       | 5 -> TX_ERRORS
+      | 6 -> RX_DROPPED
+      | 7 -> TX_DROPPED           
+      | 8 -> RX_COMPRESSED        
+      | 9 -> TX_COMPRESSED        
+      | 10 -> RX_FIFO_ERR          
+      | 11 -> TX_FIFO_ERR          
+      | 12 -> RX_LEN_ERR           
+      | 13 -> RX_OVER_ERR
+      | 14 -> RX_CRC_ERR
+      | 15 -> RX_FRAME_ERR
+      | 16 -> RX_MISSED_ERR
+      | 17 -> TX_ABORT_ERR
+      | 18 -> TX_CARRIER_ERR
+      | 19 -> TX_HBEAT_ERR
+      | 20 -> TX_WIN_ERR
+      | 21 -> COLLISIONS
+      | 22 -> MULTICAST
+      | 23 -> IP6_INPKTS
+      | 24 -> IP6_INHDRERRORS
+      | 25 -> IP6_INTOOBIGERRORS
+      | 26 -> IP6_INNOROUTES
       | _ -> invalid_arg "stat_id"
 
     let stat_id = view ~read:stat_id_of_int ~write:int_of_stat_id int
