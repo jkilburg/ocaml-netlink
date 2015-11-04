@@ -154,16 +154,57 @@ module Route = struct
       let cache = allocate Cache.t null in
       let _ = alloc_cache' s 0 cache in
       cache
-
+    
     let cache_iter f cache =
       Cache.iter f cache t
 
     let cache_to_list cache =
       Cache.to_list cache t
 
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+
+    let add = foreign "add"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+        
+    let delete = foreign "delete"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+        
+    let change = foreign "change"
+        (ptr Socket.t @-> ptr t @-> ptr t @-> int @-> returning int)
+        
     let get_by_name = foreign "get_by_name"
         (Cache.t @-> string @-> returning (ptr t))
 
+    let string_maker ~f i =
+      let slen = 128 in
+      let s = String.make slen (Char.chr 0) in
+      f i s (Unsigned.Size_t.of_int slen)
+    ;;
+
+    let x2str s = foreign s (int @-> string @-> size_t @-> returning string)
+    let str2x s = foreign s (string @-> returning int)
+
+    let stat2str' = x2str "stat2str"
+    let stat2str = string_maker ~f:stat2str'
+    let str2stat = str2x "str2stat"
+        
+    let flags2str' = x2str "flags2str"
+    let flags2str = string_maker ~f:flags2str'
+    let str2flags = str2x "str2flags"
+
+    let operstate2str' = x2str "operstate2str"
+    let operstate2str = string_maker ~f:operstate2str'
+    let str2operstate = str2x "str2operstate"
+
+    let mode2str' = x2str "mode2str"
+    let mode2str = string_maker ~f:mode2str'
+    let str2mode = str2x "str2mode"
+
+    let carrier2str' = x2str "carrier2str"
+    let carrier2str = string_maker ~f:carrier2str'
+    let str2carrier = str2x "str2carrier"
+    
     let put = foreign "put"
         (ptr t @-> returning void)
 
@@ -303,12 +344,12 @@ module Route = struct
         (ptr Socket.t @-> ptr t @-> int @-> returning int)
 
     let flags2str' = foreign "flags2str"
-        (int @-> string @-> int @-> returning string)
+        (int @-> string @-> size_t @-> returning string)
  
     let flags2str i =
       let slen = 128 in
       let s = String.make slen (Char.chr 0) in
-      flags2str' i s slen
+      flags2str' i s (Unsigned.Size_t.of_int slen)
     ;;
     
     let str2flags = foreign "str2flags"
