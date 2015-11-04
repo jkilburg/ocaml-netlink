@@ -19,11 +19,11 @@ let _ =
     Printf.printf "\tAddress: %s\n" (Netlink.Address.to_string addr);
     let mtu = Link.get_mtu link in
     Printf.printf "\tMTU: %d\n" (Unsigned.UInt32.to_int mtu);
-    let tx_bytes = Link.get_stat link Link.TX_BYTES in
+    let tx_bytes = Link.get_stat link Link.Stat_id.TX_BYTES in
     Printf.printf "\tTX bytes: %d\n" (Unsigned.UInt64.to_int tx_bytes);
-    let rx_bytes = Link.get_stat link Link.RX_BYTES in
+    let rx_bytes = Link.get_stat link Link.Stat_id.RX_BYTES in
     Printf.printf "\tRX bytes: %d\n" (Unsigned.UInt64.to_int rx_bytes);
-    let rx_errors = Link.get_stat link Link.RX_ERRORS in
+    let rx_errors = Link.get_stat link Link.Stat_id.RX_ERRORS in
     Printf.printf "\tRX errors: %d\n" (Unsigned.UInt64.to_int rx_errors);
     print_endline ""
   in
@@ -65,4 +65,3 @@ let _ =
   Netlink.Socket.close s;
   Netlink.Socket.free s
 ;;
-
