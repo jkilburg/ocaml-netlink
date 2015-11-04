@@ -34,7 +34,10 @@ let libnl_route_names = [
 
 let dlopen ~filenames ~flags =
   let rec loop = function
-    | [] -> failwith (Printf.sprintf "Failed to open any of these libraries: [ %s ] (is the package missing?)" (String.concat ", " filenames))
+    | [] ->
+      failwith
+        (Printf.sprintf "Failed to open any of these libraries: [ %s ] (is the package missing?)"
+           (String.concat ", " filenames))
     | n :: ns ->
       try
 	Dl.dlopen ~filename:n ~flags
