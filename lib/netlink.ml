@@ -263,9 +263,6 @@ module Route = struct
     let get_linkmode = foreign "get_linkmode"
         (ptr t @-> returning uint8_t)
 
-    let get_stat = foreign "get_stat"
-        (ptr t @-> returning uint64_t)
-
     let set_info_type = foreign "set_info_type"
         (ptr t @-> string @-> returning int)
 
@@ -292,6 +289,30 @@ module Route = struct
 
     let cache_to_list cache =
       Cache.to_list cache t
+
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+
+    let put = foreign "put"
+        (ptr t @-> returning void)
+
+    let add = foreign "add"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let delete = foreign "delete"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let flags2str' = foreign "flags2str"
+        (int @-> string @-> int @-> returning string)
+ 
+    let flags2str i =
+      let slen = 128 in
+      let s = String.make slen (Char.chr 0) in
+      flags2str' i s slen
+    ;;
+    
+    let str2flags = foreign "str2flags"
+        (string @-> returning int)
 
     let set_ifindex = foreign "set_ifindex"
         (ptr t @-> int @-> returning void)
@@ -379,5 +400,11 @@ module Route = struct
 
     let get_last_update_time = foreign "get_last_update_time"
         (ptr t @-> returning uint32_t)
+
+    let set_link = foreign "set_link"
+        (ptr t @-> ptr Link.t @-> returning void)
+
+    let get_link = foreign "get_link"
+        (ptr t @-> returning (ptr Link.t))
   end
 end
