@@ -13,7 +13,6 @@ Library               netlink
   Modules:            Netlink
   BuildDepends:       ctypes, ctypes.foreign
 
-
 Executable lib_test
   CompiledObject:     best
   Path:               test
@@ -22,6 +21,12 @@ Executable lib_test
   Custom:             true
   Install:            false
   BuildDepends:       netlink
+
+Executable genintf
+  CompiledObject:     best
+  Path:               util
+  MainIs:             genintf.ml
+  BuildDepends:       core, async, threads, re2
 
 Test lib_test
   Run$:               flag(tests)

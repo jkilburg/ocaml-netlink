@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 157735c225c23bf659a5fe414cb08fe9)
+# DO NOT EDIT (digest: a32294b7c33fe4bdc6887b45943dd7da)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -26,4 +26,13 @@ true: annot, bin_annot
 <test/*.ml{,i,y}>: pkg_ctypes.foreign
 <test/*.ml{,i,y}>: use_netlink
 <test/test.{native,byte}>: custom
+# Executable genintf
+<util/genintf.{native,byte}>: pkg_async
+<util/genintf.{native,byte}>: pkg_core
+<util/genintf.{native,byte}>: pkg_re2
+<util/genintf.{native,byte}>: pkg_threads
+<util/*.ml{,i,y}>: pkg_async
+<util/*.ml{,i,y}>: pkg_core
+<util/*.ml{,i,y}>: pkg_re2
+<util/*.ml{,i,y}>: pkg_threads
 # OASIS_STOP
