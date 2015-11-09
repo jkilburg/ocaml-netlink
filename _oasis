@@ -13,7 +13,7 @@ Library               netlink
   Modules:            Netlink
   BuildDepends:       ctypes, ctypes.foreign
 
-Executable lib_test
+Executable test
   CompiledObject:     best
   Path:               test
   MainIs:             test.ml

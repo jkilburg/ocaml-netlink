@@ -36,6 +36,8 @@ let fdef_to_ocaml ~fdef_rex ~module_prefix fdef =
     let return_type = String.strip return_type in
     printf "let %s = foreign \"%s\"\n(%s @-> returning %s)\n\n"
       fname fname (make_args args) (type_conversion ~is_return:true ~module_prefix return_type)
+  | Error e ->
+    eprintf "Ignoring non-matching extern statement: %s\n" (Error.to_string_hum e)
   | l ->
     let sexp_of_t =
       Tuple2.sexp_of_t

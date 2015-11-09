@@ -384,7 +384,148 @@ module Route = struct
         (ptr t @-> returning string)
   end
 
-  module Address = struct
+  module Route = struct
+    type t
+    let t : t structure typ = structure "rtnl_route"
+
+    let foreign fname = foreign ~from:libnl_route ("rtnl_route_"^fname)
+        
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+        
+    let put = foreign "put"
+        (ptr t @-> returning void)
+        
+    let get = foreign "get"
+        (ptr t @-> returning void)
+        
+    let add = foreign "add"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+        
+    let delete = foreign "delete"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+        
+    let set_table = foreign "set_table"
+        (ptr t @-> uint32_t @-> returning void)
+        
+    let get_table = foreign "get_table"
+        (ptr t @-> returning uint32_t)
+        
+    let set_scope = foreign "set_scope"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_scope = foreign "get_scope"
+        (ptr t @-> returning uint8_t)
+
+    let set_tos = foreign "set_tos"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_tos = foreign "get_tos"
+        (ptr t @-> returning uint8_t)
+
+    let set_protocol = foreign "set_protocol"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_protocol = foreign "get_protocol"
+        (ptr t @-> returning uint8_t)
+
+    let set_priority = foreign "set_priority"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_priority = foreign "get_priority"
+        (ptr t @-> returning uint32_t)
+
+    let set_family = foreign "set_family"
+        (ptr t @-> uint8_t @-> returning int)
+
+    let get_family = foreign "get_family"
+        (ptr t @-> returning uint8_t)
+
+    let set_type = foreign "set_type"
+        (ptr t @-> uint8_t @-> returning int)
+
+    let get_type = foreign "get_type"
+        (ptr t @-> returning uint8_t)
+
+    let set_flags = foreign "set_flags"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let unset_flags = foreign "unset_flags"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_flags = foreign "get_flags"
+        (ptr t @-> returning uint32_t)
+
+    let set_metric = foreign "set_metric"
+        (ptr t @-> int @-> int @-> returning int)
+
+    let unset_metric = foreign "unset_metric"
+        (ptr t @-> int @-> returning int)
+
+    (*
+    let get_metric = foreign "get_metric"
+        (ptr t @-> int @-> uint32_t * @-> returning int) *)
+
+    let set_dst = foreign "set_dst"
+        (ptr t @-> ptr Address.t @-> returning int)
+
+    let get_dst = foreign "get_dst"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_src = foreign "set_src"
+        (ptr t @-> ptr Address.t @-> returning int)
+
+    let get_src = foreign "get_src"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_pref_src = foreign "set_pref_src"
+        (ptr t @-> ptr Address.t @-> returning int)
+
+    let get_pref_src = foreign "get_pref_src"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_iif = foreign "set_iif"
+        (ptr t @-> int @-> returning void)
+
+    let get_iif = foreign "get_iif"
+        (ptr t @-> returning int)
+
+    (* This is in route.h but not in libnl3-route?
+    let get_src_len = foreign "get_src_len"
+        (ptr t @-> returning int) *)
+
+    let get_nnexthops = foreign "get_nnexthops"
+        (ptr t @-> returning int)
+
+    let guess_scope = foreign "guess_scope"
+        (ptr t @-> returning int)
+
+    let table2str = foreign "table2str"
+        (int @-> string @-> size_t @-> returning string)
+
+    let str2table = foreign "str2table"
+        (string @-> returning int)
+
+    let read_table_names = foreign "read_table_names"
+        (string @-> returning int)
+
+    let proto2str = foreign "proto2str"
+        (int @-> string @-> size_t @-> returning string)
+
+    let str2proto = foreign "str2proto"
+        (string @-> returning int)
+
+    let read_protocol_names = foreign "read_protocol_names"
+        (string @-> returning int)
+
+    let metric2str = foreign "metric2str"
+        (int @-> string @-> size_t @-> returning string)
+
+    let str2metric = foreign "str2metric"
+        (string @-> returning int)
+  end
+  
+  module RTAddress = struct
     type t
     let t : t structure typ = structure "rtnl_addr"
 

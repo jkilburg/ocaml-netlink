@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: a32294b7c33fe4bdc6887b45943dd7da)
+# DO NOT EDIT (digest: 189bddb222a853aadf4b94eeeb104853)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -18,7 +18,7 @@ true: annot, bin_annot
 "lib/netlink.cmxs": use_netlink
 <lib/*.ml{,i,y}>: pkg_ctypes
 <lib/*.ml{,i,y}>: pkg_ctypes.foreign
-# Executable lib_test
+# Executable test
 <test/test.{native,byte}>: pkg_ctypes
 <test/test.{native,byte}>: pkg_ctypes.foreign
 <test/test.{native,byte}>: use_netlink

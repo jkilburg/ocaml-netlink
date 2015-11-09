@@ -38,11 +38,11 @@ let _ =
   
   (* Addresses *)
   
-  let cache = Address.cache_alloc s in
+  let cache = RTAddress.cache_alloc s in
   
   let print_address_info addr =
-    let ifindex = Address.get_ifindex addr in
-    let label = Address.get_label addr in
+    let ifindex = RTAddress.get_ifindex addr in
+    let label = RTAddress.get_label addr in
     begin match label with
       | None ->
 	Printf.printf "%d:\n" ifindex
@@ -50,13 +50,13 @@ let _ =
 	Printf.printf "%d: %s:\n" ifindex label
     end;
     
-    let local = Address.get_local addr in
+    let local = RTAddress.get_local addr in
     Printf.printf "\t%s\n" (Netlink.Address.to_string local);
     
     print_endline ""
   in
   print_endline "== Print addresses using Addr.cache_iter ==\n";
-  Address.cache_iter print_address_info cache;
+  RTAddress.cache_iter print_address_info cache;
   
   Netlink.Cache.free cache;
   
