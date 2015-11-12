@@ -13,11 +13,11 @@ let type_conversion ?(is_return=false) ~module_prefix ts =
   then wrap_return "ptr t"
   else
     match String.strip ts with
-    | "struct rtnl_addr *" -> wrap_return "ptr Address.t"
-    | "struct nl_addr *"   -> wrap_return "ptr Netlink.Address.t"
+    | "struct rtnl_addr *" -> wrap_return "ptr RTAddress.t"
+    | "struct nl_addr *"   -> wrap_return "ptr Address.t"
     | "struct nl_sock *"   -> wrap_return "ptr Socket.t"
     | "char *"             -> "string"
-    | "unsigned int"       -> "int"
+    | "unsigned int"       -> "uint"
     | other                ->
       if String.is_substring ~substring:" " other
       then wrap_return other
