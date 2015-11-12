@@ -7,15 +7,18 @@ let castp typ p = from_voidp typ (to_voidp p)
 let read_nullable t p =
   if p = null then None
   else Some !@(castp t (allocate (ptr void) p))
+;;
 
 let write_nullable t = function
   | None -> null
   | Some f -> !@(castp (ptr void) (allocate t f))
+;;
 
 let nullable_view t =
   let read = read_nullable t
   and write = write_nullable t in
   view ~read ~write (ptr void)
+;;
 
 let string_opt = nullable_view string
 (* --- *)
@@ -45,10 +48,11 @@ let dlopen ~filenames ~flags =
 	loop ns
   in
   loop filenames
-    
+;;
+
 let libnl = dlopen ~filenames:libnl_names ~flags:[Dl.RTLD_LAZY]
 let libnl_route = dlopen ~filenames:libnl_route_names ~flags:[Dl.RTLD_LAZY]
-    
+
 module Socket = struct
   type t
   let t : t structure typ = structure "nl_sock"
@@ -57,10 +61,12 @@ module Socket = struct
     
   let int_of_protocol = function
     | NETLINK_ROUTE -> 0
+  ;;
       
   let protocol_of_int = function
     | 0 -> NETLINK_ROUTE
     | _ -> invalid_arg "protocol"
+  ;;
              
   let protocol = view ~read:protocol_of_int ~write:int_of_protocol int
       
@@ -72,41 +78,56 @@ module Socket = struct
   let connect' = foreign ~from:libnl "nl_connect" (ptr t @-> protocol @-> returning int)
   let connect s p =
     let ret = connect' s p in
-    if ret = 0 then
-      ()
-    else
-      raise Connect_failed
+    if ret = 0
+    then ()
+    else raise Connect_failed
+  ;;
         
   let close = foreign ~from:libnl "nl_close" (ptr t @-> returning void)
 end
 
-module Cache = struct
-  let t = ptr void
+module type Cache = sig
+  type t
+  val t : t structure typ
+  val foreign : string -> ('a -> 'b) fn -> 'a -> 'b
+end
+
+module Cache (M : Cache) = struct
+  type t
+  let t : t structure typ = structure "nl_cache"
       
-  let free' = foreign ~from:libnl "nl_cache_free"
-      (t @-> returning void)
-  let free cache = free' (!@ cache)
+  let free = foreign ~from:libnl "nl_cache_free" (ptr t @-> returning void)
       
-  let iter f cache ty =
-    let callback_t = ptr ty @-> ptr void @-> returning void in
+  let iter f cache =
+    let callback_t = ptr M.t @-> ptr void @-> returning void in
     let foreach = foreign ~from:libnl "nl_cache_foreach"
-	(t @-> funptr callback_t @-> ptr void @-> returning void) in
+	(ptr t @-> funptr callback_t @-> ptr void @-> returning void) in
     let f' x _ = f x in
-    foreach (!@ cache) f' null
-      
-  let to_list cache ty =
-    let get_first = foreign ~from:libnl "nl_cache_get_first" (t @-> returning (ptr ty)) in
-    let get_prev = foreign ~from:libnl "nl_cache_get_prev" (ptr ty @-> returning (ptr ty)) in
-    let get_last = foreign ~from:libnl "nl_cache_get_last" (t @-> returning (ptr ty)) in
+    foreach cache f' null
+  ;;
+
+  let to_list cache =
+    let get_first = foreign ~from:libnl "nl_cache_get_first" (ptr t @-> returning (ptr M.t)) in
+    let get_prev = foreign ~from:libnl "nl_cache_get_prev" (ptr M.t @-> returning (ptr M.t)) in
+    let get_last = foreign ~from:libnl "nl_cache_get_last" (ptr t @-> returning (ptr M.t)) in
     
-    let first = get_first (!@ cache) in
+    let first = get_first cache in
     let rec loop obj ac =
-      if obj = first then
-	obj :: ac
-      else
-	loop (get_prev obj) (obj :: ac)
+      if obj = first
+      then obj :: ac
+      else loop (get_prev obj) (obj :: ac)
     in
-    loop (get_last (!@ cache)) []
+    loop (get_last cache) []
+  ;;
+  
+  let alloc_cache = M.foreign "alloc_cache" (ptr Socket.t @-> int @-> ptr (ptr t) @-> returning int)
+      
+  let alloc s =
+    let cache = allocate (ptr t) (from_voidp t null) in
+    match alloc_cache s 0 cache with
+    | 0 -> (!@ cache)
+    | x -> failwith (Printf.sprintf "alloc_cache failed with %d" x)
+  ;;
 end
 
 module Address = struct
@@ -119,12 +140,11 @@ module Address = struct
   let to_string addr =
     let buf = String.make 128 ' ' in
     to_string' addr buf
+  ;;
 end
       
 module Route = struct
   module Link = struct
-    type t
-
     module Stat_id = struct
       type stat_id = RX_PACKETS
                    | TX_PACKETS
@@ -216,24 +236,14 @@ module Route = struct
       let t = view ~read:of_int ~write:to_int int
     end
 
-    let t : t structure typ = structure "rtnl_link"
-
-    let foreign fname = foreign ~from:libnl_route ("rtnl_link_"^fname)
+    module T = struct
+      type t
+      let t : t structure typ = structure "rtnl_link"          
+      let foreign fname = foreign ~from:libnl_route ("rtnl_link_"^fname)
+    end
+    include T
+    module Cache = Cache(T)
     
-    let alloc_cache' = foreign "alloc_cache"
-        (ptr Socket.t @-> int @-> ptr Cache.t @-> returning int)
-
-    let cache_alloc s =
-      let cache = allocate Cache.t null in
-      let _ = alloc_cache' s 0 cache in
-      cache
-    
-    let cache_iter f cache =
-      Cache.iter f cache t
-
-    let cache_to_list cache =
-      Cache.to_list cache t
-
     let alloc = foreign "alloc"
         (void @-> returning (ptr t))
 
@@ -385,10 +395,13 @@ module Route = struct
   end
 
   module Route = struct
-    type t
-    let t : t structure typ = structure "rtnl_route"
-
-    let foreign fname = foreign ~from:libnl_route ("rtnl_route_"^fname)
+    module T = struct
+      type t
+      let t : t structure typ = structure "rtnl_route"
+      let foreign fname = foreign ~from:libnl_route ("rtnl_route_"^fname)
+    end
+    include T
+    module Cache = Cache(T)
         
     let alloc = foreign "alloc"
         (void @-> returning (ptr t))
@@ -526,25 +539,14 @@ module Route = struct
   end
   
   module RTAddress = struct
-    type t
-    let t : t structure typ = structure "rtnl_addr"
-
-    let foreign fname = foreign ~from:libnl_route ("rtnl_addr_"^fname)
+    module T = struct
+      type t
+      let t : t structure typ = structure "rtnl_addr"
+      let foreign fname = foreign ~from:libnl_route ("rtnl_addr_"^fname)
+    end
+    include T
+    module Cache = Cache(T)
     
-    let alloc_cache' = foreign "alloc_cache"
-        (ptr Socket.t @-> ptr Cache.t @-> returning int)
-
-    let cache_alloc s =
-      let cache = allocate Cache.t null in
-      let _ = alloc_cache' s cache in
-      cache
-
-    let cache_iter f cache =
-      Cache.iter f cache t
-
-    let cache_to_list cache =
-      Cache.to_list cache t
-
     let alloc = foreign "alloc"
         (void @-> returning (ptr t))
 
@@ -661,5 +663,105 @@ module Route = struct
 
     let get_link = foreign "get_link"
         (ptr t @-> returning (ptr Link.t))
+  end
+
+  module Rule = struct
+    module T = struct
+      type t
+      let t : t structure typ = structure "rtnl_rule"
+      let foreign fname = foreign ~from:libnl_route ("rtnl_rule_"^fname)
+    end
+    include T
+    module Cache = Cache(T)
+        
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+
+    let put = foreign "put"
+        (ptr t @-> returning void)
+
+    let add = foreign "add"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let delete = foreign "delete"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let set_family = foreign "set_family"
+        (ptr t @-> int @-> returning void)
+
+    let get_family = foreign "get_family"
+        (ptr t @-> returning int)
+
+    let set_prio = foreign "set_prio"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_prio = foreign "get_prio"
+        (ptr t @-> returning uint32_t)
+
+    let set_mark = foreign "set_mark"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_mark = foreign "get_mark"
+        (ptr t @-> returning uint32_t)
+
+    let set_mask = foreign "set_mask"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_mask = foreign "get_mask"
+        (ptr t @-> returning uint32_t)
+
+    let set_table = foreign "set_table"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_table = foreign "get_table"
+        (ptr t @-> returning uint32_t)
+
+    let set_dsfield = foreign "set_dsfield"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_dsfield = foreign "get_dsfield"
+        (ptr t @-> returning uint8_t)
+
+    let set_src = foreign "set_src"
+        (ptr t @-> ptr Address.t @-> returning int)
+
+    let get_src = foreign "get_src"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_dst = foreign "set_dst"
+        (ptr t @-> ptr Address.t @-> returning int)
+
+    let get_dst = foreign "get_dst"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_action = foreign "set_action"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_action = foreign "get_action"
+        (ptr t @-> returning uint8_t)
+
+    let set_iif = foreign "set_iif"
+        (ptr t @-> string @-> returning int)
+
+    let get_iif = foreign "get_iif"
+        (ptr t @-> returning string)
+
+    let set_oif = foreign "set_oif"
+        (ptr t @-> string @-> returning int)
+
+    let get_oif = foreign "get_oif"
+        (ptr t @-> returning string)
+
+    let set_realms = foreign "set_realms"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_realms = foreign "get_realms"
+        (ptr t @-> returning uint32_t)
+
+    let set_goto = foreign "set_goto"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_goto = foreign "get_goto"
+        (ptr t @-> returning uint32_t)
   end
 end

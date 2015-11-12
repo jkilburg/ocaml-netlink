@@ -7,8 +7,8 @@ let _ =
   Netlink.Socket.connect s Netlink.Socket.NETLINK_ROUTE;
   
   (* Links *)
-  
-  let cache = Link.cache_alloc s in
+
+  let cache = Link.Cache.alloc s in
   
   let print_link_info link =
     let ifindex = Link.get_ifindex link in
@@ -28,17 +28,17 @@ let _ =
     print_endline ""
   in
   print_endline "== Print links using Link.cache_iter ==\n";
-  Link.cache_iter print_link_info cache;
+  Link.Cache.iter print_link_info cache;
   
   print_endline "== Print links using Link.cache_to_list and List.iter ==\n";
-  let l = Link.cache_to_list cache in
+  let l = Link.Cache.to_list cache in
   List.iter print_link_info l;
-  
-  Netlink.Cache.free cache;
+
+  Link.Cache.free cache;
   
   (* Addresses *)
   
-  let cache = RTAddress.cache_alloc s in
+  let cache = RTAddress.Cache.alloc s in
   
   let print_address_info addr =
     let ifindex = RTAddress.get_ifindex addr in
@@ -56,9 +56,9 @@ let _ =
     print_endline ""
   in
   print_endline "== Print addresses using Addr.cache_iter ==\n";
-  RTAddress.cache_iter print_address_info cache;
+  RTAddress.Cache.iter print_address_info cache;
   
-  Netlink.Cache.free cache;
+  RTAddress.Cache.free cache;
   
   (* Clean up socket *)
   
