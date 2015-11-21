@@ -86,18 +86,27 @@ module Socket = struct
   let close = foreign ~from:libnl "nl_close" (ptr t @-> returning void)
 end
 
-module type Cache = sig
+module type Cache_object = sig
   type t
-  val t : t structure typ
-  val foreign : string -> ('a -> 'b) fn -> 'a -> 'b
+  val t           : t structure typ
+  val alloc       : Socket.t structure ptr -> (unit ptr) ptr -> int
 end
 
-module Cache (M : Cache) = struct
+module Cache (M : Cache_object) : sig
+  type t
+  val t       : t structure typ
+  val free    : t structure ptr -> unit
+  val iter    : (M.t structure ptr -> unit) -> t structure ptr -> unit
+  val to_list : t structure ptr -> M.t structure ptr list
+  val alloc   : Socket.t structure ptr -> t structure ptr
+end = struct
   type t
   let t : t structure typ = structure "nl_cache"
-      
-  let free = foreign ~from:libnl "nl_cache_free" (ptr t @-> returning void)
-      
+
+  let free cache =
+    foreign ~from:libnl "nl_cache_free" (ptr t @-> returning void) cache
+  ;;
+  
   let iter f cache =
     let callback_t = ptr M.t @-> ptr void @-> returning void in
     let foreach = foreign ~from:libnl "nl_cache_foreach"
@@ -119,13 +128,11 @@ module Cache (M : Cache) = struct
     in
     loop (get_last cache) []
   ;;
-  
-  let alloc_cache = M.foreign "alloc_cache" (ptr Socket.t @-> int @-> ptr (ptr t) @-> returning int)
-      
+
   let alloc s =
-    let cache = allocate (ptr t) (from_voidp t null) in
-    match alloc_cache s 0 cache with
-    | 0 -> (!@ cache)
+    let cache = allocate (ptr void) null in
+    match M.alloc s cache with
+    | 0 -> coerce (ptr void) (ptr t) (!@ cache)
     | x -> failwith (Printf.sprintf "alloc_cache failed with %d" x)
   ;;
 end
@@ -236,10 +243,18 @@ module Route = struct
       let t = view ~read:of_int ~write:to_int int
     end
 
+    let prefix = "rtnl_link"
+    let foreign fname = foreign ~from:libnl_route (prefix^"_"^fname)
+        
     module T = struct
       type t
-      let t : t structure typ = structure "rtnl_link"          
-      let foreign fname = foreign ~from:libnl_route ("rtnl_link_"^fname)
+      let t : t structure typ = structure prefix
+      let alloc s cache =
+        let alloc_cache =
+          foreign "alloc_cache" (ptr Socket.t @-> int @-> ptr (ptr void) @-> returning int)
+        in
+        alloc_cache s 0 cache
+      ;;
     end
     include T
     module Cache = Cache(T)
@@ -257,7 +272,7 @@ module Route = struct
         (ptr Socket.t @-> ptr t @-> ptr t @-> int @-> returning int)
         
     let get_by_name = foreign "get_by_name"
-        (Cache.t @-> string @-> returning (ptr t))
+        (ptr Cache.t @-> string @-> returning (ptr t))
 
     let string_maker ~f i =
       let slen = 128 in
@@ -395,10 +410,18 @@ module Route = struct
   end
 
   module Route = struct
+    let prefix = "rtnl_route"
+    let foreign fname = foreign ~from:libnl_route (prefix^"_"^fname)
+        
     module T = struct
       type t
-      let t : t structure typ = structure "rtnl_route"
-      let foreign fname = foreign ~from:libnl_route ("rtnl_route_"^fname)
+      let t : t structure typ = structure prefix
+      let alloc s cache =
+        let alloc_cache =
+          foreign "alloc_cache" (ptr Socket.t @-> int @-> int @-> ptr (ptr void) @-> returning int)
+        in
+        alloc_cache s 0 0 cache
+      ;;
     end
     include T
     module Cache = Cache(T)
@@ -539,10 +562,18 @@ module Route = struct
   end
   
   module RTAddress = struct
+    let prefix = "rtnl_addr"
+    let foreign fname = foreign ~from:libnl_route (prefix^"_"^fname)
+        
     module T = struct
       type t
-      let t : t structure typ = structure "rtnl_addr"
-      let foreign fname = foreign ~from:libnl_route ("rtnl_addr_"^fname)
+      let t : t structure typ = structure prefix
+      let alloc s cache =
+        let alloc_cache =
+          foreign "alloc_cache" (ptr Socket.t @-> ptr (ptr void) @-> returning int)
+        in
+        alloc_cache s cache
+      ;;
     end
     include T
     module Cache = Cache(T)
@@ -666,10 +697,18 @@ module Route = struct
   end
 
   module Rule = struct
+    let prefix = "rtnl_rule"
+    let foreign fname = foreign ~from:libnl_route (prefix^"_"^fname)
+        
     module T = struct
       type t
-      let t : t structure typ = structure "rtnl_rule"
-      let foreign fname = foreign ~from:libnl_route ("rtnl_rule_"^fname)
+      let t : t structure typ = structure prefix
+      let alloc s cache =
+        let alloc_cache =
+          foreign "alloc_cache" (ptr Socket.t @-> int @-> ptr (ptr void) @-> returning int)
+        in
+        alloc_cache s 0 cache
+      ;;
     end
     include T
     module Cache = Cache(T)

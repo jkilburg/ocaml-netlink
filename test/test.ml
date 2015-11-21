@@ -1,13 +1,30 @@
 open Netlink.Route
-       
-let _ =
-  (* Create and connect socket *)
-  
-  let s = Netlink.Socket.alloc () in
-  Netlink.Socket.connect s Netlink.Socket.NETLINK_ROUTE;
-  
-  (* Links *)
 
+let rtnl_address s =
+  let cache = RTAddress.Cache.alloc s in
+
+  let print_address_info addr =
+    let ifindex = RTAddress.get_ifindex addr in
+    let label = RTAddress.get_label addr in
+    begin match label with
+      | None ->
+	Printf.printf "%d:\n" ifindex
+      | Some label ->
+	Printf.printf "%d: %s:\n" ifindex label
+    end;
+    
+    let local = RTAddress.get_local addr in
+    Printf.printf "\t%s\n" (Netlink.Address.to_string local);
+    
+    print_endline ""
+  in
+  print_endline "== Print addresses using Addr.cache_iter ==\n";
+  RTAddress.Cache.iter print_address_info cache;
+  
+  RTAddress.Cache.free cache;
+;;
+
+let rtnl_link s =
   let cache = Link.Cache.alloc s in
   
   let print_link_info link =
@@ -35,33 +52,20 @@ let _ =
   List.iter print_link_info l;
 
   Link.Cache.free cache;
+;;
+
+let _ =
+  (* Create and connect socket *)
+  let s = Netlink.Socket.alloc () in
+  Netlink.Socket.connect s Netlink.Socket.NETLINK_ROUTE;
+  
+  (* Links *)
+  rtnl_link s;
   
   (* Addresses *)
-  
-  let cache = RTAddress.Cache.alloc s in
-  
-  let print_address_info addr =
-    let ifindex = RTAddress.get_ifindex addr in
-    let label = RTAddress.get_label addr in
-    begin match label with
-      | None ->
-	Printf.printf "%d:\n" ifindex
-      | Some label ->
-	Printf.printf "%d: %s:\n" ifindex label
-    end;
-    
-    let local = RTAddress.get_local addr in
-    Printf.printf "\t%s\n" (Netlink.Address.to_string local);
-    
-    print_endline ""
-  in
-  print_endline "== Print addresses using Addr.cache_iter ==\n";
-  RTAddress.Cache.iter print_address_info cache;
-  
-  RTAddress.Cache.free cache;
+  rtnl_address s;
   
   (* Clean up socket *)
-  
   Netlink.Socket.close s;
   Netlink.Socket.free s
 ;;
