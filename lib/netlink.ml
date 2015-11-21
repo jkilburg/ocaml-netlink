@@ -87,7 +87,7 @@ module Socket = struct
 end
 
 module type Cache_object = sig
-  type t
+  type t    
   val t           : t structure typ
   val alloc       : Socket.t structure ptr -> (unit ptr) ptr -> int
 end
@@ -407,6 +407,57 @@ module Route = struct
 
     let get_info_type = foreign "get_info_type"
         (ptr t @-> returning string)
+
+    let set_group = foreign "set_group"
+        (ptr t @-> uint32_t @-> returning void)
+        
+    let get_group = foreign "get_group"
+        (ptr t @-> returning uint32_t)
+        
+    let set_carrier = foreign "set_carrier"
+        (ptr t @-> uint8_t @-> returning void)
+        
+    let get_carrier = foreign "get_carrier"
+        (ptr t @-> returning uint8_t)
+        
+    let get_ifalias = foreign "get_ifalias"
+        (ptr t @-> returning string_opt)
+        
+    let set_ifalias = foreign "set_ifalias"
+        (ptr t @-> string @-> returning void)
+        
+    let get_num_vf = foreign "get_num_vf"
+        (ptr t @-> ptr uint32_t @-> returning int)
+        
+    let set_promiscuity = foreign "set_promiscuity"
+        (ptr t @-> uint32_t @-> returning void)
+        
+    let get_promiscuity = foreign "get_promiscuity"
+        (ptr t @-> returning uint32_t)
+        
+    let set_num_tx_queues = foreign "set_num_tx_queues"
+        (ptr t @-> uint32_t @-> returning void)
+        
+    let get_num_tx_queues = foreign "get_num_tx_queues"
+        (ptr t @-> returning uint32_t)
+        
+    let set_num_rx_queues = foreign "set_num_rx_queues"
+        (ptr t @-> uint32_t @-> returning void)
+        
+    let get_num_rx_queues = foreign "get_num_rx_queues"
+        (ptr t @-> returning uint32_t)
+        
+    let enslave_ifindex = foreign "enslave_ifindex"
+        (ptr Socket.t @-> int @-> int @-> returning int)
+        
+    let enslave = foreign "enslave"
+        (ptr Socket.t @-> ptr t @-> ptr t @-> returning int)
+        
+    let release_ifindex = foreign "release_ifindex"
+        (ptr Socket.t @-> int @-> returning int)
+        
+    let release = foreign "release"
+        (ptr Socket.t @-> ptr t @-> returning int)
   end
 
   module Route = struct
@@ -707,7 +758,7 @@ module Route = struct
         let alloc_cache =
           foreign "alloc_cache" (ptr Socket.t @-> int @-> ptr (ptr void) @-> returning int)
         in
-        alloc_cache s 0 cache
+        alloc_cache s 2 cache
       ;;
     end
     include T
@@ -783,13 +834,13 @@ module Route = struct
         (ptr t @-> string @-> returning int)
 
     let get_iif = foreign "get_iif"
-        (ptr t @-> returning string)
+        (ptr t @-> returning string_opt)
 
     let set_oif = foreign "set_oif"
         (ptr t @-> string @-> returning int)
 
     let get_oif = foreign "get_oif"
-        (ptr t @-> returning string)
+        (ptr t @-> returning string_opt)
 
     let set_realms = foreign "set_realms"
         (ptr t @-> uint32_t @-> returning void)
