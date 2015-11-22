@@ -3,7 +3,7 @@ open Netlink.Route
 let printf = Printf.printf
                
 let rtnl_address s =
-  let cache = RTAddress.Cache.alloc s in
+  let cache = RTAddress.Cache.alloc (RTAddress.alloc_cache s) in
 
   let print_address_info addr =
     let ifindex = RTAddress.get_ifindex addr in
@@ -27,7 +27,7 @@ let rtnl_address s =
 ;;
 
 let rtnl_link s =
-  let cache = Link.Cache.alloc s in
+  let cache = Link.Cache.alloc (Link.alloc_cache s 2) in
   
   let print_link_info link =
     let ifindex = Link.get_ifindex link in
@@ -44,6 +44,7 @@ let rtnl_link s =
     printf "\tRX bytes: %d\n" (Unsigned.UInt64.to_int rx_bytes);
     let rx_errors = Link.get_stat link Link.Stat_id.RX_ERRORS in
     printf "\tRX errors: %d\n" (Unsigned.UInt64.to_int rx_errors);
+    printf "\tIF index : %d\n" (Link.get_ifindex link);
     print_endline ""
   in
   print_endline "== Print links using Cache.iter ==\n";
@@ -57,7 +58,7 @@ let rtnl_link s =
 ;;
 
 let rtnl_rule s =
-  let cache = Rule.Cache.alloc s in
+  let cache = Rule.Cache.alloc (Rule.alloc_cache s 2) in
 
   let print_rule rule =
     let src = Rule.get_src rule in
@@ -76,6 +77,23 @@ let rtnl_rule s =
   Rule.Cache.free cache
 ;;
 
+let rtnl_route s =
+  let cache = Route.Cache.alloc (Route.alloc_cache s 2 0) in
+
+  let print_route route =
+    let src = Route.get_src route in
+    printf "\tSource     : %s\n" (Netlink.Address.to_string src);
+    let dst = Route.get_dst route in
+    printf "\tDestination: %s\n" (Netlink.Address.to_string dst);
+    printf "\tFamily     : %d\n" (Route.get_family route |> Unsigned.UInt8.to_int);
+    printf "\tIIF        : %d\n" (Route.get_iif route);
+  in
+  print_endline "== Print routes using Cache.iter ==\n";
+  Route.Cache.iter print_route cache;
+
+  Route.Cache.free cache
+;;
+
 let _ =
   (* Create and connect socket *)
   let s = Netlink.Socket.alloc () in
@@ -85,6 +103,7 @@ let _ =
   rtnl_link s;  
   rtnl_address s;
   rtnl_rule s;
+  rtnl_route s;
   
   (* Clean up socket *)
   Netlink.Socket.close s;
