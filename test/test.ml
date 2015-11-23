@@ -1,7 +1,10 @@
 open Netlink.Route
 
 let printf = Printf.printf
-               
+
+let id x = x
+let opt = function | None -> "<NONE>" | Some x -> x
+  
 let rtnl_address s =
   let cache = RTAddress.Cache.alloc (RTAddress.alloc_cache s) in
 
@@ -32,20 +35,44 @@ let rtnl_link s =
   let print_link_info link =
     let ifindex = Link.get_ifindex link in
     let name = Link.get_name link in
-    printf "%d: %s:\n" ifindex name;
-    
+    printf "=== %d: %s ===\n" ifindex name;
+
     let addr = Link.get_addr link in
-    printf "\tAddress: %s\n" (Netlink.Address.to_string addr);
+    printf "Address: %s\n" (Netlink.Address.to_string addr);
     let mtu = Link.get_mtu link in
-    printf "\tMTU: %d\n" (Unsigned.UInt32.to_int mtu);
+    printf "MTU: %d\n" (Unsigned.UInt32.to_int mtu);
     let tx_bytes = Link.get_stat link Link.Stat_id.TX_BYTES in
-    printf "\tTX bytes: %d\n" (Unsigned.UInt64.to_int tx_bytes);
+    printf "TX bytes: %d\n" (Unsigned.UInt64.to_int tx_bytes);
     let rx_bytes = Link.get_stat link Link.Stat_id.RX_BYTES in
-    printf "\tRX bytes: %d\n" (Unsigned.UInt64.to_int rx_bytes);
+    printf "RX bytes: %d\n" (Unsigned.UInt64.to_int rx_bytes);
     let rx_errors = Link.get_stat link Link.Stat_id.RX_ERRORS in
-    printf "\tRX errors: %d\n" (Unsigned.UInt64.to_int rx_errors);
-    printf "\tIF index : %d\n" (Link.get_ifindex link);
-    print_endline ""
+    printf "RX errors: %d\n" (Unsigned.UInt64.to_int rx_errors);
+
+    printf "get_qdisc : %s\n%!" (id (Link.get_qdisc link));
+    printf "get_name : %s\n%!" (id (Link.get_name link));
+    printf "get_group : %d\n%!" (Unsigned.UInt32.to_int (Link.get_group link));
+    printf "get_flags : %d\n%!" (Unsigned.UInt32.to_int (Link.get_flags link));
+    printf "get_mtu : %d\n%!" (Unsigned.UInt32.to_int (Link.get_mtu link));
+    printf "get_txqlen : %d\n%!" (Unsigned.UInt32.to_int (Link.get_txqlen link));
+    printf "get_ifindex : %d\n%!" (id (Link.get_ifindex link));
+    printf "get_family : %d\n%!" (id (Link.get_family link));
+    printf "get_arptype : %d\n%!" (Unsigned.UInt32.to_int (Link.get_arptype link));
+    printf "get_addr : %s\n%!" (Netlink.Address.to_string (Link.get_addr link));
+    printf "get_broadcast : %s\n%!" (Netlink.Address.to_string (Link.get_broadcast link));
+    printf "get_link : %d\n%!" (id (Link.get_link link));
+    printf "get_master : %d\n%!" (id (Link.get_master link));
+    printf "get_carrier : %d\n%!" (Unsigned.UInt8.to_int (Link.get_carrier link));
+    printf "get_operstate : %d\n%!" (Unsigned.UInt8.to_int (Link.get_operstate link));
+    printf "get_linkmode : %d\n%!" (Unsigned.UInt8.to_int (Link.get_linkmode link));
+    printf "get_ifalias : %s\n%!" (opt (Link.get_ifalias link));
+    (* printf "get_type : %s\n%!" (id (Link.get_type link)); *)
+    printf "get_promiscuity : %d\n%!" (Unsigned.UInt32.to_int (Link.get_promiscuity link));
+    printf "get_num_tx_queues : %d\n%!" (Unsigned.UInt32.to_int (Link.get_num_tx_queues link));
+    printf "get_num_rx_queues : %d\n%!" (Unsigned.UInt32.to_int (Link.get_num_rx_queues link));
+    printf "get_info_type : %s\n%!" (opt (Link.get_info_type link));
+    printf "get_weight : %d\n%!" (Unsigned.UInt32.to_int (Link.get_weight link));
+
+    printf "\n"
   in
   print_endline "== Print links using Cache.iter ==\n";
   Link.Cache.iter print_link_info cache;

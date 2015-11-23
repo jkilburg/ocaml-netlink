@@ -398,7 +398,7 @@ module Route = struct
         (ptr t @-> string @-> returning int)
 
     let get_info_type = foreign "get_info_type"
-        (ptr t @-> returning string)
+        (ptr t @-> returning string_opt)
 
     let set_group = foreign "set_group"
         (ptr t @-> uint32_t @-> returning void)
