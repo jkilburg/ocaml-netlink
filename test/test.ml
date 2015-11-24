@@ -149,6 +149,32 @@ let rtnl_neighbour s =
   Neighbour.Cache.free cache
 ;;
 
+
+let rtnl_qdisc s =
+  let cache = Qdisc.Cache.alloc (Qdisc.alloc_cache s) in
+
+  let print_qdisc qdisc =
+    let tc = Traffic_control.of_qdisc qdisc in
+
+    (* printf "\tLink.get_name : %s\n%!" (id (Link.get_name (Traffic_control.get_link tc))); *)
+
+    printf "\tget_ifindex : %d\n%!" (id (Traffic_control.get_ifindex tc));
+    printf "\tget_mtu : %d\n%!" (Unsigned.UInt32.to_int (Traffic_control.get_mtu tc));
+    printf "\tget_mpu : %d\n%!" (Unsigned.UInt32.to_int (Traffic_control.get_mpu tc));
+    printf "\tget_overhead : %d\n%!" (Unsigned.UInt32.to_int (Traffic_control.get_overhead tc));
+    printf "\tget_linktype : %d\n%!" (Unsigned.UInt32.to_int (Traffic_control.get_linktype tc));
+    printf "\tget_handle : %d\n%!" (Unsigned.UInt32.to_int (Traffic_control.get_handle tc));
+    printf "\tget_parent : %d\n%!" (Unsigned.UInt32.to_int (Traffic_control.get_parent tc));
+    printf "\tget_kind : %s\n%!" (id (Traffic_control.get_kind tc));
+    
+    printf "\n"
+  in
+  printf "== Print qdisc using Cache.iter ==\n";
+  Qdisc.Cache.iter print_qdisc cache;
+
+  Qdisc.Cache.free cache
+;;
+
 let _ =
   (* Create and connect socket *)
   let s = Netlink.Socket.alloc () in
@@ -160,6 +186,7 @@ let _ =
   rtnl_rule s;
   rtnl_route s;
   rtnl_neighbour s;
+  rtnl_qdisc s;
   
   (* Clean up socket *)
   Netlink.Socket.close s;

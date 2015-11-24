@@ -912,11 +912,48 @@ module Route = struct
         (ptr t @-> returning int)
   end
 
-  module TC = struct
+  module Qdisc = struct
+    type t
+    let t : t structure typ = structure "rtnl_qdisc"
+    let foreign fname = foreign ~from:libnl_route ("rtnl_qdisc_"^fname)
+
+    module Cache = Cache(struct type elt = t let elt = t end)        
+
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+
+    let put = foreign "put"
+        (ptr t @-> returning void)
+
+    let alloc_cache = foreign "alloc_cache"
+        (ptr Socket.t @-> ptr (ptr Cache.t) @-> returning int)
+
+    let get = foreign "get"
+        (ptr Cache.t @-> int @-> uint32_t @-> returning (ptr t))
+
+    let get_by_parent = foreign "get_by_parent"
+        (ptr Cache.t @-> int @-> uint32_t @-> returning (ptr t))
+
+    let add = foreign "add"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let update = foreign "update"
+        (ptr Socket.t @-> ptr t @-> ptr t @-> int @-> returning int)
+
+    let delete = foreign "delete"
+        (ptr Socket.t @-> ptr t @-> returning int)
+
+    let change = foreign "change"
+        (ptr Socket.t @-> ptr t @-> ptr t @-> returning int)
+  end
+
+  module Traffic_control = struct
     type t
     let t : t structure typ = structure "rtnl_tc"
     let foreign fname = foreign ~from:libnl_route ("rtnl_tc_"^fname)
 
+    let of_qdisc qdisc = coerce (ptr Qdisc.t) (ptr t) qdisc
+        
     let set_ifindex = foreign "set_ifindex"
         (ptr t @-> int @-> returning void)
 
