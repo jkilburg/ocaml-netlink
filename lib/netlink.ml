@@ -452,6 +452,68 @@ module Route = struct
         (ptr Socket.t @-> ptr t @-> returning int)
   end
 
+  module Nexthop = struct
+    type t
+    let t : t structure typ = structure "rtnl_nexthop"
+    let foreign fname = foreign ~from:libnl_route ("rtnl_route_nh_"^fname)
+
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+
+    let clone = foreign "clone"
+        (ptr t @-> returning (ptr t))
+
+    let free = foreign "free"
+        (ptr t @-> returning void)
+
+    let compare = foreign "compare"
+        (ptr t @-> ptr t @-> uint32_t @-> int @-> returning int)
+
+    (*
+    let dump = foreign "dump"
+        (ptr t @-> struct nl_dump_params * @-> returning void)
+    *)
+
+    let set_weight = foreign "set_weight"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_weight = foreign "get_weight"
+        (ptr t @-> returning uint8_t)
+
+    let set_ifindex = foreign "set_ifindex"
+        (ptr t @-> int @-> returning void)
+
+    let get_ifindex = foreign "get_ifindex"
+        (ptr t @-> returning int)
+
+    let set_gateway = foreign "set_gateway"
+        (ptr t @-> ptr Address.t @-> returning void)
+
+    let get_gateway = foreign "get_gateway"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_flags = foreign "set_flags"
+        (ptr t @-> uint @-> returning void)
+
+    let unset_flags = foreign "unset_flags"
+        (ptr t @-> uint @-> returning void)
+
+    let get_flags = foreign "get_flags"
+        (ptr t @-> returning uint)
+
+    let set_realms = foreign "set_realms"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_realms = foreign "get_realms"
+        (ptr t @-> returning uint32_t)
+
+    let flags2str = foreign "flags2str"
+        (int @-> string @-> size_t @-> returning string)
+
+    let str2flags = foreign "str2flags"
+        (string @-> returning int)
+  end
+
   module Route = struct
     type t
     let t : t structure typ = structure "rtnl_route"
@@ -566,6 +628,15 @@ module Route = struct
     let get_src_len = foreign "get_src_len"
         (ptr t @-> returning int) *)
 
+    let add_nexthop = foreign "add_nexthop"
+        (ptr t @-> ptr Nexthop.t @-> returning void)
+
+    let remove_nexthop = foreign "remove_nexthop"
+        (ptr t @-> ptr Nexthop.t @-> returning void)
+
+    let nexthop_n = foreign "nexthop_n"
+        (ptr t @-> int @-> returning (ptr Nexthop.t))
+        
     let get_nnexthops = foreign "get_nnexthops"
         (ptr t @-> returning int)
 
