@@ -674,7 +674,7 @@ module Route = struct
         (ptr t @-> int @-> returning void)
 
     let get_flags = foreign "get_flags"
-        (ptr t @-> returning int)
+        (ptr t @-> returning uint32_t)
 
     let set_peer = foreign "set_peer"
         (ptr t @-> ptr Address.t @-> returning int)

@@ -5,11 +5,18 @@ module Regex = Re2.Regex
 
 let const_rex = Regex.create_exn "^const "
   
-let type_conversion ?(is_return=false) ~module_prefix ts =
+type test_params =
+  { fdef_rex      : Regex.t
+  ; module_prefix : string
+  ; test_module   : string
+  ; test_instance : string
+  }
+  
+let type_conversion ?(is_return=false) ~params ts =
   let ts = String.strip ts in
   let ts = Re2.Regex.replace ~f:(fun _ -> "") const_rex ts |> Or_error.ok_exn in
   let wrap_return s = if is_return then "(" ^ s ^ ")" else s in
-  if ts = "struct " ^ module_prefix ^ " *"
+  if ts = "struct " ^ params.module_prefix ^ " *"
   then wrap_return "ptr t"
   else
     match String.strip ts with
@@ -24,18 +31,18 @@ let type_conversion ?(is_return=false) ~module_prefix ts =
       else other
 ;;
 
-let fdef_to_ocaml ~fdef_rex ~module_prefix fdef =
-  match Regex.find_submatches fdef_rex fdef with
+let fdef_to_ocaml ~params fdef =
+  match Regex.find_submatches params.fdef_rex fdef with
   | Ok [| Some _; Some return_type; Some fname; Some args |] ->
     let make_args args =
       String.split ~on:',' args
-      |> List.map ~f:(type_conversion ~module_prefix)
+      |> List.map ~f:(type_conversion ~params)
       |> String.concat ~sep:" @-> "
     in
     let fname = String.strip fname in
     let return_type = String.strip return_type in
     printf "let %s = foreign \"%s\"\n(%s @-> returning %s)\n\n"
-      fname fname (make_args args) (type_conversion ~is_return:true ~module_prefix return_type)
+      fname fname (make_args args) (type_conversion ~is_return:true ~params return_type)
   | Error e ->
     eprintf "Ignoring non-matching extern statement: %s\n" (Error.to_string_hum e)
   | l ->
@@ -62,8 +69,8 @@ let getter_type_handlers return_type =
     None
 ;;
 
-let fdef_to_test_getters ~fdef_rex ~module_prefix fdef =
-  match Regex.find_submatches fdef_rex fdef with
+let fdef_to_test_getters ~params fdef =
+  match Regex.find_submatches params.fdef_rex fdef with
   | Ok [| Some _; Some return_type; Some fname; Some args |] ->
     if List.length (String.split ~on:',' args) = 1
     then
@@ -73,7 +80,9 @@ let fdef_to_test_getters ~fdef_rex ~module_prefix fdef =
         | None -> ()
         | Some (format, converter) ->
           if String.is_prefix ~prefix:"get" fname
-          then printf "printf \"%s : %s\\n%s\" (%s (YYY.%s xxx));\n" fname format "%!" converter fname
+          then
+            printf "printf \"\\t%s : %s\\n%s\" (%s (%s.%s %s));\n"
+              fname format "%!" converter params.test_module fname params.test_instance
       end
   | Error e ->
     eprintf "Ignoring non-matching extern statement: %s\n" (Error.to_string_hum e)
@@ -86,7 +95,7 @@ let fdef_to_test_getters ~fdef_rex ~module_prefix fdef =
     failwiths "Function definition did not match the expected pattern" (fdef,l) sexp_of_t
 ;;
 
-let handle_line ~make_test ~fdef_rex ~module_prefix i fdef_in_progress l =
+let handle_line ~make_test ~params i fdef_in_progress l =
   let l = String.strip l in
   if String.is_prefix ~prefix:"extern \"C\"" l
   then None
@@ -99,8 +108,8 @@ let handle_line ~make_test ~fdef_rex ~module_prefix i fdef_in_progress l =
       then
         begin
           if make_test
-          then fdef_to_test_getters ~fdef_rex ~module_prefix l
-          else fdef_to_ocaml ~fdef_rex ~module_prefix l;
+          then fdef_to_test_getters ~params l
+          else fdef_to_ocaml ~params l;
           None
         end
       else Some [l]
@@ -113,8 +122,8 @@ let handle_line ~make_test ~fdef_rex ~module_prefix i fdef_in_progress l =
         let fdef = List.rev (l::fdef_in_progress) |> String.concat ~sep:" " in
         begin
           if make_test
-          then fdef_to_test_getters ~fdef_rex ~module_prefix fdef
-          else fdef_to_ocaml ~fdef_rex ~module_prefix fdef;
+          then fdef_to_test_getters ~params fdef
+          else fdef_to_ocaml ~params fdef;
           None
         end
       else Some (l::fdef_in_progress)
@@ -126,20 +135,26 @@ let () =
     Command.Spec.(
       empty
       +> flag "-make-test" no_arg ~doc:" output test code"
+      +> flag "-test-module-name"
+        (optional_with_default "Test_module" string) ~doc:" test module name"
+      +> flag "-test-instance-name"
+        (optional_with_default "test_instance" string) ~doc:" test instance variable name"
       +> anon ( "FILENAME" %: string)
       +> anon ( "MODULE_PREFIX" %: string)
     )
-    (fun make_test fname module_prefix () ->
+    (fun make_test test_module test_instance fname module_prefix () ->
        let fdef_rex_str = "^extern\\s(.+)" ^ module_prefix ^ "_([^\\(]+)\\(([^\\)]+)" in
        let fdef_rex = Regex.create_exn fdef_rex_str in
        Reader.file_lines fname
        >>| fun lines ->
        if not make_test
        then printf "let foreign fname = foreign ~from:libnl_route (\"%s_\"^fname)\n\n" module_prefix;
-       List.foldi lines ~init:None ~f:(handle_line ~make_test ~fdef_rex ~module_prefix)
+       let params = { fdef_rex; module_prefix; test_module; test_instance } in
+       List.foldi lines ~init:None ~f:(handle_line ~make_test ~params)
        |> function
        | Some fdef_in_progress ->
-         failwiths "Unexpected left over function definition" fdef_in_progress (List.sexp_of_t String.sexp_of_t)
+         failwiths "Unexpected left over function definition"
+           fdef_in_progress (List.sexp_of_t String.sexp_of_t)
        | None -> ())
   |> Command.run
 ;;
