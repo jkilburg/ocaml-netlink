@@ -97,7 +97,7 @@ module Cache (M : Cache_object) : sig
   val free    : t structure ptr -> unit
   val iter    : (M.elt structure ptr -> unit) -> t structure ptr -> unit
   val to_list : t structure ptr -> M.elt structure ptr list
-  val alloc   : ((unit ptr) ptr -> int) -> t structure ptr
+  val alloc   : ((t structure ptr) ptr -> int) -> t structure ptr
 end = struct
   type t
   let t : t structure typ = structure "nl_cache"
@@ -129,9 +129,9 @@ end = struct
   ;;
 
   let alloc f =
-    let cache = allocate (ptr void) null in
+    let cache = allocate (ptr t) (coerce (ptr void) (ptr t) null) in
     match f cache with
-    | 0 -> coerce (ptr void) (ptr t) (!@ cache)
+    | 0 -> (!@ cache)
     | x -> failwith (Printf.sprintf "alloc_cache failed with %d" x)
   ;;
 end
@@ -249,7 +249,7 @@ module Route = struct
     module Cache = Cache(struct type elt = t let elt = t end)
     
     let alloc_cache = foreign "alloc_cache"
-        (ptr Socket.t @-> int @-> ptr (ptr void) @-> returning int)
+        (ptr Socket.t @-> int @-> ptr (ptr Cache.t) @-> returning int)
         
     let alloc = foreign "alloc"
         (void @-> returning (ptr t))
@@ -459,9 +459,9 @@ module Route = struct
         
     module Cache = Cache(struct type elt = t let elt = t end)
         
-    let alloc_cache =
-      foreign "alloc_cache" (ptr Socket.t @-> int @-> int @-> ptr (ptr void) @-> returning int)
-
+    let alloc_cache = foreign "alloc_cache"
+        (ptr Socket.t @-> int @-> int @-> ptr (ptr Cache.t) @-> returning int)
+        
     let alloc = foreign "alloc"
         (void @-> returning (ptr t))
         
@@ -604,8 +604,8 @@ module Route = struct
         
     module Cache = Cache(struct type elt = t let elt = t end)
     
-    let alloc_cache =
-      foreign "alloc_cache" (ptr Socket.t @-> ptr (ptr void) @-> returning int)
+    let alloc_cache = foreign "alloc_cache"
+        (ptr Socket.t @-> ptr (ptr Cache.t) @-> returning int)
 
     let alloc = foreign "alloc"
         (void @-> returning (ptr t))
@@ -732,8 +732,8 @@ module Route = struct
 
     module Cache = Cache(struct type elt = t let elt = t end)
         
-    let alloc_cache =
-      foreign "alloc_cache" (ptr Socket.t @-> int @-> ptr (ptr void) @-> returning int)
+    let alloc_cache = foreign "alloc_cache"
+        (ptr Socket.t @-> int @-> ptr (ptr Cache.t) @-> returning int)
             
     let alloc = foreign "alloc"
         (void @-> returning (ptr t))
@@ -824,5 +824,91 @@ module Route = struct
 
     let get_goto = foreign "get_goto"
         (ptr t @-> returning uint32_t)
+  end
+
+  module Neighbour = struct
+    type t
+    let t : t structure typ = structure "rtnl_neigh"
+    let foreign fname = foreign ~from:libnl_route ("rtnl_neigh_"^fname)
+        
+    module Cache = Cache(struct type elt = t let elt = t end)        
+
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+
+    let put = foreign "put"
+        (ptr t @-> returning void)
+
+    let alloc_cache = foreign "alloc_cache"
+        (ptr Socket.t @-> ptr (ptr Cache.t) @-> returning int)
+
+    let get = foreign "get"
+        (ptr Cache.t @-> int @-> ptr Address.t @-> returning (ptr t))
+
+    let state2str = foreign "state2str"
+        (int @-> string @-> size_t @-> returning string)
+
+    let str2state = foreign "str2state"
+        (string @-> returning int)
+
+    let flags2str = foreign "flags2str"
+        (int @-> string @-> size_t @-> returning string)
+
+    let str2flag = foreign "str2flag"
+        (string @-> returning int)
+
+    let add = foreign "add"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let delete = foreign "delete"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let set_state = foreign "set_state"
+        (ptr t @-> int @-> returning void)
+
+    let get_state = foreign "get_state"
+        (ptr t @-> returning int)
+
+    let unset_state = foreign "unset_state"
+        (ptr t @-> int @-> returning void)
+
+    let set_flags = foreign "set_flags"
+        (ptr t @-> uint @-> returning void)
+
+    let unset_flags = foreign "unset_flags"
+        (ptr t @-> uint @-> returning void)
+
+    let get_flags = foreign "get_flags"
+        (ptr t @-> returning uint32_t)
+
+    let set_ifindex = foreign "set_ifindex"
+        (ptr t @-> int @-> returning void)
+
+    let get_ifindex = foreign "get_ifindex"
+        (ptr t @-> returning int)
+
+    let set_lladdr = foreign "set_lladdr"
+        (ptr t @-> ptr Address.t @-> returning void)
+
+    let get_lladdr = foreign "get_lladdr"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_dst = foreign "set_dst"
+        (ptr t @-> ptr Address.t @-> returning int)
+
+    let get_dst = foreign "get_dst"
+        (ptr t @-> returning (ptr Address.t))
+
+    let set_type = foreign "set_type"
+        (ptr t @-> int @-> returning void)
+
+    let get_type = foreign "get_type"
+        (ptr t @-> returning int)
+
+    let set_family = foreign "set_family"
+        (ptr t @-> int @-> returning void)
+
+    let get_family = foreign "get_family"
+        (ptr t @-> returning int)
   end
 end

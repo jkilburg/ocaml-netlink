@@ -129,6 +129,26 @@ let rtnl_route s =
   Route.Cache.free cache
 ;;
 
+let rtnl_neighbour s =
+  let cache = Neighbour.Cache.alloc (Neighbour.alloc_cache s) in
+
+  let print_neighbour neigh =
+    printf "\tget_state : %d\n%!" (id (Neighbour.get_state neigh));
+    printf "\tget_flags : %d\n%!" (Unsigned.UInt32.to_int (Neighbour.get_flags neigh));
+    printf "\tget_ifindex : %d\n%!" (id (Neighbour.get_ifindex neigh));
+    printf "\tget_lladdr : %s\n%!" (Netlink.Address.to_string (Neighbour.get_lladdr neigh));
+    printf "\tget_dst : %s\n%!" (Netlink.Address.to_string (Neighbour.get_dst neigh));
+    printf "\tget_type : %d\n%!" (id (Neighbour.get_type neigh));
+    printf "\tget_family : %d\n%!" (id (Neighbour.get_family neigh));
+
+    printf "\n"
+  in
+  printf "== Print neighbours using Cache.iter ==\n";
+  Neighbour.Cache.iter print_neighbour cache;
+
+  Neighbour.Cache.free cache
+;;
+
 let _ =
   (* Create and connect socket *)
   let s = Netlink.Socket.alloc () in
@@ -139,6 +159,7 @@ let _ =
   rtnl_address s;
   rtnl_rule s;
   rtnl_route s;
+  rtnl_neighbour s;
   
   (* Clean up socket *)
   Netlink.Socket.close s;
