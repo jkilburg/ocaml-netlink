@@ -78,7 +78,7 @@ let function_definition_handler ~make_test ~params fdef =
     then emit_test_getters ~params ~return_type ~fname ~args
     else emit_lib_funs ~params ~return_type ~fname ~args
   | Error e ->
-    eprintf "Ignoring non-matching extern statement: %s\n" (Error.to_string_hum e)
+    eprintf "Ignoring non-matching extern statement: %s, %s\n" (Error.to_string_hum e) fdef
   | l ->
     let sexp_of_t =
       Tuple2.sexp_of_t
@@ -112,7 +112,7 @@ let handle_line ~make_test ~params i fdef_in_progress l =
       then
         let fdef = List.rev (l::fdef_in_progress) |> String.concat ~sep:" " in
         begin
-          function_definition_handler ~make_test ~params l;
+          function_definition_handler ~make_test ~params fdef;
           None
         end
       else Some (l::fdef_in_progress)
