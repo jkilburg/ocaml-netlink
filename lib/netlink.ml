@@ -911,4 +911,87 @@ module Route = struct
     let get_family = foreign "get_family"
         (ptr t @-> returning int)
   end
+
+  module TC = struct
+    type t
+    let t : t structure typ = structure "rtnl_tc"
+    let foreign fname = foreign ~from:libnl_route ("rtnl_tc_"^fname)
+
+    let set_ifindex = foreign "set_ifindex"
+        (ptr t @-> int @-> returning void)
+
+    let get_ifindex = foreign "get_ifindex"
+        (ptr t @-> returning int)
+
+    let set_link = foreign "set_link"
+        (ptr t @-> (ptr Link.t) @-> returning void)
+
+    let get_link = foreign "get_link"
+        (ptr t @-> returning (ptr Link.t))
+
+    let set_mtu = foreign "set_mtu"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_mtu = foreign "get_mtu"
+        (ptr t @-> returning uint32_t)
+
+    let set_mpu = foreign "set_mpu"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_mpu = foreign "get_mpu"
+        (ptr t @-> returning uint32_t)
+
+    let set_overhead = foreign "set_overhead"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_overhead = foreign "get_overhead"
+        (ptr t @-> returning uint32_t)
+
+    let set_linktype = foreign "set_linktype"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_linktype = foreign "get_linktype"
+        (ptr t @-> returning uint32_t)
+
+    let set_handle = foreign "set_handle"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_handle = foreign "get_handle"
+        (ptr t @-> returning uint32_t)
+
+    let set_parent = foreign "set_parent"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_parent = foreign "get_parent"
+        (ptr t @-> returning uint32_t)
+
+    let set_kind = foreign "set_kind"
+        (ptr t @-> string @-> returning int)
+
+    let get_kind = foreign "get_kind"
+        (ptr t @-> returning string)
+
+    (*
+    let get_stat = foreign "get_stat"
+        (ptr t @-> enum rtnl_tc_stat @-> returning uint64_t)
+    *)
+
+    let calc_txtime = foreign "calc_txtime"
+        (int @-> int @-> returning int)
+
+    let calc_bufsize = foreign "calc_bufsize"
+        (int @-> int @-> returning int)
+
+    let calc_cell_log = foreign "calc_cell_log"
+        (int @-> returning int)
+
+    let read_classid_file = foreign "read_classid_file"
+        (void @-> returning int)
+
+    let handle2str = foreign "handle2str"
+        (uint32_t @-> string @-> size_t @-> returning string)
+
+    let str2handle = foreign "str2handle"
+        (string @-> (ptr uint32_t) @-> returning int)
+  end
 end
