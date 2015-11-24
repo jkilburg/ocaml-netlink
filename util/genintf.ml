@@ -31,27 +31,16 @@ let type_conversion ?(is_return=false) ~params ts =
       else other
 ;;
 
-let fdef_to_ocaml ~params fdef =
-  match Regex.find_submatches params.fdef_rex fdef with
-  | Ok [| Some _; Some return_type; Some fname; Some args |] ->
-    let make_args args =
-      String.split ~on:',' args
-      |> List.map ~f:(type_conversion ~params)
-      |> String.concat ~sep:" @-> "
-    in
-    let fname = String.strip fname in
-    let return_type = String.strip return_type in
-    printf "let %s = foreign \"%s\"\n(%s @-> returning %s)\n\n"
-      fname fname (make_args args) (type_conversion ~is_return:true ~params return_type)
-  | Error e ->
-    eprintf "Ignoring non-matching extern statement: %s\n" (Error.to_string_hum e)
-  | l ->
-    let sexp_of_t =
-      Tuple2.sexp_of_t
-        String.sexp_of_t
-        (Or_error.sexp_of_t (Array.sexp_of_t (Option.sexp_of_t String.sexp_of_t)))
-    in
-    failwiths "Function definition did not match the expected pattern" (fdef,l) sexp_of_t
+let emit_lib_funs ~params ~return_type ~fname ~args =
+  let make_args args =
+    String.split ~on:',' args
+    |> List.map ~f:(type_conversion ~params)
+    |> String.concat ~sep:" @-> "
+  in
+  let fname = String.strip fname in
+  let return_type = String.strip return_type in
+  printf "let %s = foreign \"%s\"\n(%s @-> returning %s)\n\n"
+    fname fname (make_args args) (type_conversion ~is_return:true ~params return_type)
 ;;
 
 let getter_type_handlers return_type =
@@ -69,21 +58,25 @@ let getter_type_handlers return_type =
     None
 ;;
 
-let fdef_to_test_getters ~params fdef =
+let emit_test_getters ~params ~return_type ~fname ~args =
+  if List.length (String.split ~on:',' args) = 1
+  then
+    let fname = String.strip fname in
+    match getter_type_handlers return_type with
+    | None -> ()
+    | Some (format, converter) ->
+      if String.is_prefix ~prefix:"get" fname
+      then
+        printf "printf \"\\t%s : %s\\n%s\" (%s (%s.%s %s));\n"
+          fname format "%!" converter params.test_module fname params.test_instance
+;;
+
+let function_definition_handler ~make_test ~params fdef =
   match Regex.find_submatches params.fdef_rex fdef with
   | Ok [| Some _; Some return_type; Some fname; Some args |] ->
-    if List.length (String.split ~on:',' args) = 1
-    then
-      let fname = String.strip fname in
-      begin
-        match getter_type_handlers return_type with
-        | None -> ()
-        | Some (format, converter) ->
-          if String.is_prefix ~prefix:"get" fname
-          then
-            printf "printf \"\\t%s : %s\\n%s\" (%s (%s.%s %s));\n"
-              fname format "%!" converter params.test_module fname params.test_instance
-      end
+    if make_test
+    then emit_test_getters ~params ~return_type ~fname ~args
+    else emit_lib_funs ~params ~return_type ~fname ~args
   | Error e ->
     eprintf "Ignoring non-matching extern statement: %s\n" (Error.to_string_hum e)
   | l ->
@@ -107,9 +100,7 @@ let handle_line ~make_test ~params i fdef_in_progress l =
       if String.is_suffix ~suffix:";" l
       then
         begin
-          if make_test
-          then fdef_to_test_getters ~params l
-          else fdef_to_ocaml ~params l;
+          function_definition_handler ~make_test ~params l;
           None
         end
       else Some [l]
@@ -121,9 +112,7 @@ let handle_line ~make_test ~params i fdef_in_progress l =
       then
         let fdef = List.rev (l::fdef_in_progress) |> String.concat ~sep:" " in
         begin
-          if make_test
-          then fdef_to_test_getters ~params fdef
-          else fdef_to_ocaml ~params fdef;
+          function_definition_handler ~make_test ~params l;
           None
         end
       else Some (l::fdef_in_progress)
