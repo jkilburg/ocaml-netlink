@@ -25,16 +25,6 @@ let string_opt = nullable_view string
 
 (* The library names vary by distribution, so use a search list *)
 
-let libnl_names = [
-  "libnl-3.so";
-  "libnl-3.so.200"; (* Debian/Ubuntu *)
-]
-
-let libnl_route_names = [
-  "libnl-route-3.so";
-  "libnl-route-3.so.200"; (* Debian/Ubuntu *)
-]
-
 let dlopen ~filenames ~flags =
   let rec loop = function
     | [] ->
@@ -50,22 +40,28 @@ let dlopen ~filenames ~flags =
   loop filenames
 ;;
 
-let libnl = dlopen ~filenames:libnl_names ~flags:[Dl.RTLD_LAZY]
-let libnl_route = dlopen ~filenames:libnl_route_names ~flags:[Dl.RTLD_LAZY]
+let libnl_names = [
+  "libnl-3.so";
+  "libnl-3.so.200"; (* Debian/Ubuntu *)
+]
 
+let libnl = dlopen ~filenames:libnl_names ~flags:[Dl.RTLD_LAZY]
+    
 module Socket = struct
   type t
   let t : t structure typ = structure "nl_sock"
       
-  type protocol = NETLINK_ROUTE
+  type protocol = NETLINK_ROUTE | NETLINK_NETFILTER
     
   let int_of_protocol = function
-    | NETLINK_ROUTE -> 0
+    | NETLINK_ROUTE     -> 0
+    | NETLINK_NETFILTER -> 12
   ;;
       
   let protocol_of_int = function
-    | 0 -> NETLINK_ROUTE
-    | _ -> invalid_arg "protocol"
+    | 0  -> NETLINK_ROUTE
+    | 12 -> NETLINK_NETFILTER
+    | _  -> invalid_arg "protocol"
   ;;
              
   let protocol = view ~read:protocol_of_int ~write:int_of_protocol int
@@ -150,6 +146,13 @@ module Address = struct
 end
       
 module Route = struct
+  let libnl_route_names = [
+    "libnl-route-3.so";
+    "libnl-route-3.so.200"; (* Debian/Ubuntu *)
+  ]
+  
+  let libnl_route = dlopen ~filenames:libnl_route_names ~flags:[Dl.RTLD_LAZY]
+      
   module Link = struct
     module Stat_id = struct
       type stat_id = RX_PACKETS
@@ -1101,5 +1104,177 @@ module Route = struct
 
     let str2handle = foreign "str2handle"
         (string @-> (ptr uint32_t) @-> returning int)
+  end
+end
+
+module Netfilter = struct
+  let libnl_nf_names = [
+    "libnl-nf-3.so";
+    "libnl-nf-3.so.200"; (* Debian/Ubuntu *)
+  ]
+  let libnl_nf = dlopen ~filenames:libnl_nf_names ~flags:[Dl.RTLD_LAZY]
+
+  module Exp = struct
+    type t
+    let t : t structure typ = structure "nfnl_exp"
+    let foreign fname = foreign ~from:libnl_nf ("nfnl_exp_"^fname)
+
+    module Cache = Cache(struct type elt = t let elt = t end)
+
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+
+    let alloc_cache = foreign "alloc_cache"
+        (ptr Socket.t @-> ptr (ptr Cache.t) @-> returning int)
+
+    let get = foreign "get"
+        (ptr t @-> returning void)
+
+    let put = foreign "put"
+        (ptr t @-> returning void)
+
+    let dump_request = foreign "dump_request"
+        (ptr Socket.t @-> returning int)
+
+    let add = foreign "add"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let del = foreign "del"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let query = foreign "query"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let set_family = foreign "set_family"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_family = foreign "get_family"
+        (ptr t @-> returning uint8_t)
+
+    let set_timeout = foreign "set_timeout"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let test_timeout = foreign "test_timeout"
+        (ptr t @-> returning int)
+
+    let get_timeout = foreign "get_timeout"
+        (ptr t @-> returning uint32_t)
+
+    let set_id = foreign "set_id"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let test_id = foreign "test_id"
+        (ptr t @-> returning int)
+
+    let get_id = foreign "get_id"
+        (ptr t @-> returning uint32_t)
+
+    let set_helper_name = foreign "set_helper_name"
+        (ptr t @-> ptr void @-> returning int)
+
+    let test_helper_name = foreign "test_helper_name"
+        (ptr t @-> returning int)
+
+    let get_helper_name = foreign "get_helper_name"
+        (ptr t @-> returning string)
+
+    let set_zone = foreign "set_zone"
+        (ptr t @-> uint16_t @-> returning void)
+
+    let test_zone = foreign "test_zone"
+        (ptr t @-> returning int)
+
+    let get_zone = foreign "get_zone"
+        (ptr t @-> returning uint16_t)
+
+    let set_flags = foreign "set_flags"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let test_flags = foreign "test_flags"
+        (ptr t @-> returning int)
+
+    let get_flags = foreign "get_flags"
+        (ptr t @-> returning uint32_t)
+
+    let set_class = foreign "set_class"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let test_class = foreign "test_class"
+        (ptr t @-> returning int)
+
+    let get_class = foreign "get_class"
+        (ptr t @-> returning uint32_t)
+
+    let set_fn = foreign "set_fn"
+        (ptr t @-> ptr void @-> returning int)
+
+    let test_fn = foreign "test_fn"
+        (ptr t @-> returning int)
+
+    let get_fn = foreign "get_fn"
+        (ptr t @-> returning string)
+
+    let set_nat_dir = foreign "set_nat_dir"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let test_nat_dir = foreign "test_nat_dir"
+        (ptr t @-> returning int)
+
+    let get_nat_dir = foreign "get_nat_dir"
+        (ptr t @-> returning uint8_t)
+
+    let set_src = foreign "set_src"
+        (ptr t @-> int @-> ptr Address.t @-> returning int)
+
+    let test_src = foreign "test_src"
+        (ptr t @-> int @-> returning int)
+
+    let get_src = foreign "get_src"
+        (ptr t @-> int @-> returning (ptr Address.t))
+
+    let set_dst = foreign "set_dst"
+        (ptr t @-> int @-> ptr Address.t @-> returning int)
+
+    let test_dst = foreign "test_dst"
+        (ptr t @-> int @-> returning int)
+
+    let get_dst = foreign "get_dst"
+        (ptr t @-> int @-> returning (ptr Address.t))
+
+    let set_l4protonum = foreign "set_l4protonum"
+        (ptr t @-> int @-> uint8_t @-> returning void)
+
+    let test_l4protonum = foreign "test_l4protonum"
+        (ptr t @-> int @-> returning int)
+
+    let get_l4protonum = foreign "get_l4protonum"
+        (ptr t @-> int @-> returning uint8_t)
+
+    let set_ports = foreign "set_ports"
+        (ptr t @-> int @-> uint16_t @-> uint16_t @-> returning void)
+
+    let test_ports = foreign "test_ports"
+        (ptr t @-> int @-> returning int)
+
+    let get_src_port = foreign "get_src_port"
+        (ptr t @-> int @-> returning uint16_t)
+
+    let get_dst_port = foreign "get_dst_port"
+        (ptr t @-> int @-> returning uint16_t)
+
+    let set_icmp = foreign "set_icmp"
+        (ptr t @-> int @-> uint16_t @-> uint8_t @-> uint8_t @-> returning void)
+
+    let test_icmp = foreign "test_icmp"
+        (ptr t @-> int @-> returning int)
+
+    let get_icmp_id = foreign "get_icmp_id"
+        (ptr t @-> int @-> returning uint16_t)
+
+    let get_icmp_type = foreign "get_icmp_type"
+        (ptr t @-> int @-> returning uint8_t)
+
+    let get_icmp_code = foreign "get_icmp_code"
+        (ptr t @-> int @-> returning uint8_t)
   end
 end

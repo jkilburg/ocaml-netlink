@@ -1,4 +1,3 @@
-open Netlink.Route
 
 let printf = Printf.printf
 
@@ -6,6 +5,8 @@ let id x = x
 let opt = function | None -> "<NONE>" | Some x -> x
   
 let rtnl_address s =
+  let module RTAddress = Netlink.Route.RTAddress in
+       
   let cache = RTAddress.Cache.alloc (RTAddress.alloc_cache s) in
 
   let print_address_info addr =
@@ -34,6 +35,8 @@ let rtnl_address s =
 ;;
 
 let rtnl_link s =
+  let module Link = Netlink.Route.Link in
+  
   let cache = Link.Cache.alloc (Link.alloc_cache s 2) in
   
   let print_link_info link =
@@ -77,6 +80,8 @@ let rtnl_link s =
 ;;
 
 let rtnl_rule s =
+  let module Rule = Netlink.Route.Rule in
+  
   let cache = Rule.Cache.alloc (Rule.alloc_cache s 2) in
 
   let print_rule rule =
@@ -103,6 +108,8 @@ let rtnl_rule s =
 ;;
 
 let rtnl_route s =
+  let module Route = Netlink.Route.Route in
+  
   let cache = Route.Cache.alloc (Route.alloc_cache s 2 0) in
 
   let print_route route =
@@ -130,6 +137,8 @@ let rtnl_route s =
 ;;
 
 let rtnl_neighbour s =
+  let module Neighbour = Netlink.Route.Neighbour in
+  
   let cache = Neighbour.Cache.alloc (Neighbour.alloc_cache s) in
 
   let print_neighbour neigh =
@@ -151,6 +160,9 @@ let rtnl_neighbour s =
 
 
 let rtnl_qdisc s =
+  let module Traffic_control = Netlink.Route.Traffic_control in
+  let module Qdisc = Netlink.Route.Qdisc in
+  
   let cache = Qdisc.Cache.alloc (Qdisc.alloc_cache s) in
 
   let print_qdisc qdisc =
@@ -175,8 +187,30 @@ let rtnl_qdisc s =
   Qdisc.Cache.free cache
 ;;
 
+let nfnl_exp s =
+  let module Exp = Netlink.Netfilter.Exp in
+
+  let cache = Exp.Cache.alloc (Exp.alloc_cache s) in
+  
+  let print_exp exp =
+    printf "\tget_family : %d\n%!" (Unsigned.UInt8.to_int (Exp.get_family exp));
+    printf "\tget_timeout : %d\n%!" (Unsigned.UInt32.to_int (Exp.get_timeout exp));
+    printf "\tget_id : %d\n%!" (Unsigned.UInt32.to_int (Exp.get_id exp));
+    printf "\tget_helper_name : %s\n%!" (id (Exp.get_helper_name exp));
+    printf "\tget_zone : %d\n%!" (Unsigned.UInt16.to_int (Exp.get_zone exp));
+    printf "\tget_flags : %d\n%!" (Unsigned.UInt32.to_int (Exp.get_flags exp));
+    printf "\tget_class : %d\n%!" (Unsigned.UInt32.to_int (Exp.get_class exp));
+    printf "\tget_fn : %s\n%!" (id (Exp.get_fn exp));
+    printf "\tget_nat_dir : %d\n%!" (Unsigned.UInt8.to_int (Exp.get_nat_dir exp));
+  in
+  printf "== Print exp using Cache.iter ==\n";
+  Exp.Cache.iter print_exp cache;
+
+  Exp.Cache.free cache
+;;
+
 let _ =
-  (* Create and connect socket *)
+  (* Create and connect route socket *)
   let s = Netlink.Socket.alloc () in
   Netlink.Socket.connect s Netlink.Socket.NETLINK_ROUTE;
 
@@ -188,7 +222,22 @@ let _ =
   rtnl_neighbour s;
   rtnl_qdisc s;
   
-  (* Clean up socket *)
+  (* Clean up route socket *)
   Netlink.Socket.close s;
-  Netlink.Socket.free s
+  Netlink.Socket.free s;
+    
+  (* Create and connect route socket *)
+  if Unix.getuid() <> 0
+  then printf "You must be root to test the netfilter interface.\n"
+  else
+    begin
+      let s = Netlink.Socket.alloc () in
+      Netlink.Socket.connect s Netlink.Socket.NETLINK_NETFILTER;
+      
+      nfnl_exp s;
+      
+      (* Clean up route socket *)
+      Netlink.Socket.close s;
+      Netlink.Socket.free s
+    end
 ;;

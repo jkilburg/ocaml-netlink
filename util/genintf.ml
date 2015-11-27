@@ -20,11 +20,13 @@ let type_conversion ?(is_return=false) ~params ts =
   then wrap_return "ptr t"
   else
     match String.strip ts with
+    | "struct nl_cache **" -> wrap_return "ptr (ptr Cache.t)"
     | "struct rtnl_addr *" -> wrap_return "ptr RTAddress.t"
     | "struct nl_addr *"   -> wrap_return "ptr Address.t"
     | "struct nl_sock *"   -> wrap_return "ptr Socket.t"
     | "char *"             -> "string"
     | "unsigned int"       -> "uint"
+    | "void *"             -> wrap_return "ptr void"
     | other                ->
       if String.is_substring ~substring:" " other
       then wrap_return other
@@ -50,6 +52,7 @@ let getter_type_handlers return_type =
   | "const char *"       -> Some ("%s", "id")
   | "unsigned int"       -> Some ("%d", "Unsigned.UInt32.to_int")
   | "uint8_t"            -> Some ("%d", "Unsigned.UInt8.to_int")
+  | "uint16_t"           -> Some ("%d", "Unsigned.UInt16.to_int")
   | "uint32_t"           -> Some ("%d", "Unsigned.UInt32.to_int")
   | "uint64_t"           -> Some ("%d", "Unsigned.UInt64.to_int")
   | "int"                -> Some ("%d", "id")
