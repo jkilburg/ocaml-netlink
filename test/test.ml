@@ -209,6 +209,27 @@ let nfnl_exp s =
   Exp.Cache.free cache
 ;;
 
+let nfnl_ct s =
+  let module Conntrack = Netlink.Netfilter.Conntrack in
+
+  let cache = Conntrack.Cache.alloc (Conntrack.alloc_cache s) in
+  
+  let print_ct ct =
+    printf "\tget_family : %d\n%!" (Unsigned.UInt8.to_int (Conntrack.get_family ct));
+    printf "\tget_proto : %d\n%!" (Unsigned.UInt8.to_int (Conntrack.get_proto ct));
+    printf "\tget_tcp_state : %d\n%!" (Unsigned.UInt8.to_int (Conntrack.get_tcp_state ct));
+    printf "\tget_status : %d\n%!" (Unsigned.UInt32.to_int (Conntrack.get_status ct));
+    printf "\tget_timeout : %d\n%!" (Unsigned.UInt32.to_int (Conntrack.get_timeout ct));
+    printf "\tget_mark : %d\n%!" (Unsigned.UInt32.to_int (Conntrack.get_mark ct));
+    printf "\tget_use : %d\n%!" (Unsigned.UInt32.to_int (Conntrack.get_use ct));
+    printf "\tget_id : %d\n%!" (Unsigned.UInt32.to_int (Conntrack.get_id ct));
+  in
+  printf "== Print ct using Cache.iter ==\n";
+  Conntrack.Cache.iter print_ct cache;
+
+  Conntrack.Cache.free cache
+;;
+
 let _ =
   (* Create and connect route socket *)
   let s = Netlink.Socket.alloc () in
@@ -235,6 +256,7 @@ let _ =
       Netlink.Socket.connect s Netlink.Socket.NETLINK_NETFILTER;
       
       nfnl_exp s;
+      nfnl_ct s;
       
       (* Clean up route socket *)
       Netlink.Socket.close s;
