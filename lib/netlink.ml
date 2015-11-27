@@ -1277,4 +1277,192 @@ module Netfilter = struct
     let get_icmp_code = foreign "get_icmp_code"
         (ptr t @-> int @-> returning uint8_t)
   end
+
+  module Conntrack = struct
+    type t
+    let t : t structure typ = structure "nfnl_ct"
+    let foreign fname = foreign ~from:libnl_nf ("nfnl_ct_"^fname)
+
+    module Cache = Cache(struct type elt = t let elt = t end)
+
+    let alloc = foreign "alloc"
+        (void @-> returning (ptr t))
+
+    let alloc_cache = foreign "alloc_cache"
+        (ptr Socket.t @-> ptr (ptr Cache.t) @-> returning int)
+
+    let get = foreign "get"
+        (ptr t @-> returning void)
+
+    let put = foreign "put"
+        (ptr t @-> returning void)
+
+    let dump_request = foreign "dump_request"
+        (ptr Socket.t @-> returning int)
+
+    let add = foreign "add"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let del = foreign "del"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let query = foreign "query"
+        (ptr Socket.t @-> ptr t @-> int @-> returning int)
+
+    let set_family = foreign "set_family"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let get_family = foreign "get_family"
+        (ptr t @-> returning uint8_t)
+
+    let set_proto = foreign "set_proto"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let test_proto = foreign "test_proto"
+        (ptr t @-> returning int)
+
+    let get_proto = foreign "get_proto"
+        (ptr t @-> returning uint8_t)
+
+    let set_tcp_state = foreign "set_tcp_state"
+        (ptr t @-> uint8_t @-> returning void)
+
+    let test_tcp_state = foreign "test_tcp_state"
+        (ptr t @-> returning int)
+
+    let get_tcp_state = foreign "get_tcp_state"
+        (ptr t @-> returning uint8_t)
+
+    let tcp_state2str = foreign "tcp_state2str"
+        (uint8_t @-> string @-> size_t @-> returning string)
+
+    let str2tcp_state = foreign "str2tcp_state"
+        (string @-> returning int)
+
+    let set_status = foreign "set_status"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let unset_status = foreign "unset_status"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let get_status = foreign "get_status"
+        (ptr t @-> returning uint32_t)
+
+    let status2str = foreign "status2str"
+        (int @-> string @-> size_t @-> returning string)
+
+    let str2status = foreign "str2status"
+        (string @-> returning int)
+
+    let set_timeout = foreign "set_timeout"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let test_timeout = foreign "test_timeout"
+        (ptr t @-> returning int)
+
+    let get_timeout = foreign "get_timeout"
+        (ptr t @-> returning uint32_t)
+
+    let set_mark = foreign "set_mark"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let test_mark = foreign "test_mark"
+        (ptr t @-> returning int)
+
+    let get_mark = foreign "get_mark"
+        (ptr t @-> returning uint32_t)
+
+    let set_use = foreign "set_use"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let test_use = foreign "test_use"
+        (ptr t @-> returning int)
+
+    let get_use = foreign "get_use"
+        (ptr t @-> returning uint32_t)
+
+    let set_id = foreign "set_id"
+        (ptr t @-> uint32_t @-> returning void)
+
+    let test_id = foreign "test_id"
+        (ptr t @-> returning int)
+
+    let get_id = foreign "get_id"
+        (ptr t @-> returning uint32_t)
+
+    let set_src = foreign "set_src"
+        (ptr t @-> int @-> ptr Address.t @-> returning int)
+
+    let get_src = foreign "get_src"
+        (ptr t @-> int @-> returning (ptr Address.t))
+
+    let set_dst = foreign "set_dst"
+        (ptr t @-> int @-> ptr Address.t @-> returning int)
+
+    let get_dst = foreign "get_dst"
+        (ptr t @-> int @-> returning (ptr Address.t))
+
+    let set_src_port = foreign "set_src_port"
+        (ptr t @-> int @-> uint16_t @-> returning void)
+
+    let test_src_port = foreign "test_src_port"
+        (ptr t @-> int @-> returning int)
+
+    let get_src_port = foreign "get_src_port"
+        (ptr t @-> int @-> returning uint16_t)
+
+    let set_dst_port = foreign "set_dst_port"
+        (ptr t @-> int @-> uint16_t @-> returning void)
+
+    let test_dst_port = foreign "test_dst_port"
+        (ptr t @-> int @-> returning int)
+
+    let get_dst_port = foreign "get_dst_port"
+        (ptr t @-> int @-> returning uint16_t)
+
+    let set_icmp_id = foreign "set_icmp_id"
+        (ptr t @-> int @-> uint16_t @-> returning void)
+
+    let test_icmp_id = foreign "test_icmp_id"
+        (ptr t @-> int @-> returning int)
+
+    let get_icmp_id = foreign "get_icmp_id"
+        (ptr t @-> int @-> returning uint16_t)
+
+    let set_icmp_type = foreign "set_icmp_type"
+        (ptr t @-> int @-> uint8_t @-> returning void)
+
+    let test_icmp_type = foreign "test_icmp_type"
+        (ptr t @-> int @-> returning int)
+
+    let get_icmp_type = foreign "get_icmp_type"
+        (ptr t @-> int @-> returning uint8_t)
+
+    let set_icmp_code = foreign "set_icmp_code"
+        (ptr t @-> int @-> uint8_t @-> returning void)
+
+    let test_icmp_code = foreign "test_icmp_code"
+        (ptr t @-> int @-> returning int)
+
+    let get_icmp_code = foreign "get_icmp_code"
+        (ptr t @-> int @-> returning uint8_t)
+
+    let set_packets = foreign "set_packets"
+        (ptr t @-> int @-> uint64_t @-> returning void)
+
+    let test_packets = foreign "test_packets"
+        (ptr t @-> int @-> returning int)
+
+    let get_packets = foreign "get_packets"
+        (ptr t @-> int @-> returning uint64_t)
+
+    let set_bytes = foreign "set_bytes"
+        (ptr t @-> int @-> uint64_t @-> returning void)
+
+    let test_bytes = foreign "test_bytes"
+        (ptr t @-> int @-> returning int)
+
+    let get_bytes = foreign "get_bytes"
+        (ptr t @-> int @-> returning uint64_t)
+  end
 end
